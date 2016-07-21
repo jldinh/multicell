@@ -1,0 +1,19 @@
+# {# pkglts, coverage
+[html]
+title = multicell's coverage
+directory = build/htmlcov
+
+[run]
+source = multicell
+
+[report]
+exclude_lines =
+    # Don't complain if tests don't hit defensive assertion code:
+    raise AssertionError
+    raise NotImplemented
+    raise NotImplementedError
+show_missing = True
+
+
+# #}
+

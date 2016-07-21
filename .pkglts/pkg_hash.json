@@ -1,0 +1,50 @@
+{
+  ".coveragerc": {
+    "coverage\r": "N53pHZcGq1gMK0xZlbyy/0wto4X5oipW9a3navG5U3NRmRV/4kG8YFoO7j7g0/EQPlZvonzZdLIAEt14pidl2Q=="
+  }, 
+  ".gitignore": {
+    "github\r": "I31PqGZxGOXScIs70ur7URmItjtxjXiKXK1RcaBaZgqL8a86HNZuaSbkUGeIH35dbz25DF7cmN3lTjKgNzR+Hw=="
+  }, 
+  ".pypirc": {
+    "pypi\r": "cwthVpASXVscpz2C6AO/lgH/eGQAWfH5ij9p0UvnUUlKnuKzUy9ufcphCAh3YTWP3B/e1avKB84slu0wOvpkHw==", 
+    "pypi.test\r": "m63Y84jgGD1MpRHDgLOf1rDv78ZcX8dWIMZXR2YwQJTswhvfXcvdAqpO8Jf/4pDzLTbl1dSvY6IgTOC2kxsdkA=="
+  }, 
+  ".pypirc (1)": {
+    "pypi": "2NY8qKq6AEMWhHocVeMN8DUHkza6rCDCVLCpKoQ4Y8NsHyHgvDfznKJo/+3qXWxOF2azATTm9vO4jB58sNVrlA==", 
+    "pypi.test": "zWBcGMyChxCuXPMsosS2ktztvIXlHRzYwkMZ3rZivm7W3l/sEqvUrhHagBw9CL72Alod3KL7aE/WIRoK3FeqfA=="
+  }, 
+  "AUTHORS.rst": {
+    "doc\r": "A6o3ZQCL54B2+Em2b7YGzhefIFRPx8/IEaXuceR8cbInt0QTorWogAyJoq4Osnn1i0RPaPCUc5U0ma5WR4LTTQ=="
+  }, 
+  "HISTORY.rst": {}, 
+  "LICENSE": {
+    "license\r": "d4jZMJwALJ2QeQFjzJzvobmX2RXEZxuCrzejO4BvTu7lf2h7vSXE0D8NcOsX/2cU7BQnJfgnaaTHiplevJGOXg=="
+  }, 
+  "MANIFEST.in": {
+    "pysetup\r": "kEiB4J0h4swMmynTN6KKyf5Ig3HvtsLs8n0ftdkKecuSj3JFjYRK5fqXYruhMz7LHkuaS79RyQpq8oSYuoc97Q=="
+  }, 
+  "README.rst": {
+    "doc\r": "b7qBaFdzMQISD1i8DaxqZBemMbvdkutPKrN358ZnwzE7FE4Yb3jbMqllBy//DWqxzm1Wc9dvS+Hz6oXFuLJ+Yg=="
+  }, 
+  "doc/_static/nonempty.txt": {}, 
+  "doc/authors.rst": {}, 
+  "doc/contributing.rst": {}, 
+  "doc/history.rst": {}, 
+  "doc/index.rst": {}, 
+  "doc/installation.rst": {}, 
+  "doc/readme.rst": {}, 
+  "doc/usage.rst": {}, 
+  "dvlpt_requirements.txt": {
+    "pysetup\r": "tSJ5nCPJC1kaPPdz8vHD5CR3InEitusBwcHC0eARfUojPsCPBjPd8MyoP3sM/4cu12UjB2arXs2otlk5YwWmdQ=="
+  }, 
+  "requirements.txt": {
+    "pysetup\r": "ZxDxfMKfe9MsHOBhINZ0v9YGJ5leiCfuK6dTyPprDcYRRAviI4HvcMpJObKzQjhC30HFqMiJaVlZZIi/ovSexg=="
+  }, 
+  "setup.cfg": {
+    "pysetup\r": "B8WcypwKZWyLRmu6Nj4hzT0s2hR2oGNEZhWAsStL6p1uTg3B41BQRycZeynCJ8OTMBt58dQGeTDN5M8NLe1VgQ=="
+  }, 
+  "setup.py": {
+    "pysetup.call\r": "t30iIuCMd/sWxStR2XNYb8bCBgwanhKt8YYn2VKACyAqL5cKFRUWpVRIpAR+uxXUZ9PYYy2csMmECcONnRZE8w==", 
+    "pysetup.kwds\r": "h9992yPLl3LlDVnwoig4eUieWtepd/XX/mqEp40Jtl4vSLO+lDfKpR/+CcdLvERNh/+LscPSbYwUferzbp2PeA=="
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "_pkglts": {
+    "auto_install": true, 
+    "install_front_end": "stdout", 
+    "use_prompts": false, 
+    "version": 3
+  }, 
+  "base": {
+    "authors": [
+      [
+        "Jean-Louis Dinh", 
+        "contact@jldinh.com"
+      ]
+    ], 
+    "namespace": null, 
+    "pkgname": "multicell", 
+    "url": null
+  }, 
+  "coverage": {}, 
+  "doc": {
+    "description": "Python library to run biological simulations of 3D, multicellular tissues.", 
+    "keywords": []
+  }, 
+  "github": {
+    "owner": "{{ base.authors[0][0] }}", 
+    "project": "{{ base.pkgname }}", 
+    "url": "https://github.com/{{ github.owner }}/{{ github.project }}"
+  }, 
+  "license": {
+    "name": "mit", 
+    "organization": "University of Nottingham", 
+    "project": "{{ base.pkgname }}", 
+    "year": 2016
+  }, 
+  "pypi": {
+    "classifiers": [
+      "Development Status :: 2 - Pre-Alpha", 
+      "Intended Audience :: Developers", 
+      "License :: OSI Approved :: MIT License", 
+      "Natural Language :: English"
+    ]
+  }, 
+  "pysetup": {
+    "intended_versions": [
+      "27"
+    ], 
+    "require": []
+  }, 
+  "test": {}, 
+  "version": {
+    "major": 0, 
+    "minor": 1, 
+    "post": 0
+  }
+}
