@@ -6,7 +6,7 @@ from .simulation import *
 from .simulation_ptm import *
 from .simulation_builder import *
 from .plantgl_renderer import *
-from . import growth, division, dilution
+from . import growth, division, dilution, rendering
 
 __version__ = version.__version__
 
