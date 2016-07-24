@@ -517,6 +517,12 @@ class Simulation(object):
         
         self.t = [0., float(t_max)]
     
+    def set_cell_variable(self, name, values, time_index=None):
+        self.y.set_species(name, values, time_index)
+        
+    def get_cell_variable(self, name, cid=None, time_index=None):
+        return self.y.get_species(name, cid, time_index)
+    
     def initialize_concentrations(self, name=None, _min=0., _max=0.):
         """
         Deprecated.

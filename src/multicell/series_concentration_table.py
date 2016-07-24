@@ -6,7 +6,6 @@ Created on Fri Oct 02 10:41:35 2015
 """
 
 import concentration_table
-import numpy as np
 
 class Series_Concentration_Table(list):
     
