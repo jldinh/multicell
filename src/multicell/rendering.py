@@ -50,7 +50,7 @@ class MatplotlibRenderer():
         if name == None:
             face_values = [0. for fid in outer_fids]
             array = np.zeros(self.sim.n_cells)
-            max_cmap = 0
+            max_cmap = 1
         else:
             face_values = [self.sim.y.get_species(name, self.sim.mesh.regions(2, fid).next()) for fid in outer_fids]
             array = self.sim.y.get_species(name) / self.sim.dilution_volumes.as_1d_array()
@@ -58,8 +58,10 @@ class MatplotlibRenderer():
                 max_cmap = np.max(array)
             else:
                 max_cmap = np.percentile(array, max_percentile)
-        
-        sm = matplotlib.cm.ScalarMappable(matplotlib.colors.Normalize(vmin=0., vmax=max_cmap, clip=True), "jet")
+            if max_cmap == 0:
+                max_cmap = 1
+                
+        sm = matplotlib.cm.ScalarMappable(matplotlib.colors.Normalize(vmin=0, vmax=max_cmap, clip=True), "jet")
         facecolors = [sm.to_rgba(x) for x in face_values]
         
         
