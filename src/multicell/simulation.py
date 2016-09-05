@@ -388,8 +388,8 @@ class Simulation(object):
     def diffusion(self, D, values, adjacency_matrix):
         return self._transport(diffusion, D, values, adjacency_matrix)
     
-    def transport_against_gradient(self, T, values, adjacency_matrix):
-        return self._transport(transport_against_gradient, T, values, adjacency_matrix)
+    def transport_against_gradient(self, T, values, adjacency_matrix, *args, **kwargs):
+        return self._transport(transport_against_gradient, T, values, adjacency_matrix, *args, **kwargs)
     
     def add_adjacency_matrix(self, name, adjacency_matrix):
         if name in self.variables_adjacency_matrices:
