@@ -18,6 +18,10 @@ import functools
 
 #ne.set_num_threads(8)
 
+def restrict_environment(environment, function):
+    parameters = inspect.getargspec(function)[0]
+    return {k: environment[k] for k in parameters} 
+
 # Compute a matrix of differences between cell concentrations for species name
 def compute_differences(values):
     """
@@ -603,7 +607,7 @@ class Simulation(object):
         environment["simulation"] = self
         environment.update(self.parameters)
         for name, function in self.intermediary_variables.items():
-            environment[name] = function(**environment)
+            environment[name] = function(**restrict_environment(environment, function))
         environment.update(self.adjacency_matrices)
         self.derivative_environment = environment
         
@@ -628,7 +632,8 @@ class Simulation(object):
             
             self.compute_environment(y, t)
             for name in self.names_species:
-                dydt.set_species(name, self.ODEs[name](**self.derivative_environment))
+                function = self.ODEs[name]
+                dydt.set_species(name, function(**restrict_environment(self.derivative_environment, function)))
                 
             result = dydt.as_1d_array()
 
