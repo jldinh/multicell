@@ -72,7 +72,7 @@ def diffusion(D, values, adjacency_matrix):
     """
     
     differences = compute_differences(values)
-    return -D * (adjacency_matrix.multiply(differences)).getA().sum(1)
+    return -D * (adjacency_matrix.multiply(differences)).sum(1).getA().flatten()
 
 def transport_against_gradient(T, values, adjacency_matrix, response="linear", params={}):
     """
@@ -104,11 +104,13 @@ def transport_against_gradient(T, values, adjacency_matrix, response="linear", p
     
     # 1 value per column => horizontal broadcast into column pattern
     # Should be precomputed for incomplete grids
-    sum_concentrations_neighbors = (adjacency_matrix.multiply(values).getA()).sum(1)
+    sum_concentrations_neighbors = adjacency_matrix.multiply(values).sum(1).getA().flatten()
     sum_concentrations_neighbors += 1 * (sum_concentrations_neighbors == 0)
     
-    incoming_transporters_distribution = adjacency_matrix.multiply(np.reshape(values, (-1, 1))).getA() / sum_concentrations_neighbors
-    outgoing_transporters_distribution = adjacency_matrix.multiply(values).getA() / np.reshape(sum_concentrations_neighbors, (-1, 1))
+    inv_sum_concentrations_neighbors = 1. / sum_concentrations_neighbors
+    
+    incoming_transporters_distribution = adjacency_matrix.multiply(np.reshape(values, (-1, 1))).multiply(inv_sum_concentrations_neighbors)
+    outgoing_transporters_distribution = adjacency_matrix.multiply(values).multiply(np.reshape(inv_sum_concentrations_neighbors, (-1, 1)))
     
     #assert abs(np.linalg.norm(transporters_distribution.sum(1), np.inf) - 1) < 0.001
     
