@@ -107,10 +107,10 @@ def transport_against_gradient(T, values, adjacency_matrix, response="linear", p
     sum_concentrations_neighbors = adjacency_matrix.multiply(values).sum(1).getA().flatten()
     sum_concentrations_neighbors += 1 * (sum_concentrations_neighbors == 0)
     
-    inv_sum_concentrations_neighbors = 1. / sum_concentrations_neighbors
+    X = np.reshape(values, (-1, 1)) / sum_concentrations_neighbors
     
-    incoming_transporters_distribution = adjacency_matrix.multiply(np.reshape(values, (-1, 1))).multiply(inv_sum_concentrations_neighbors)
-    outgoing_transporters_distribution = adjacency_matrix.multiply(values).multiply(np.reshape(inv_sum_concentrations_neighbors, (-1, 1)))
+    incoming_transporters_distribution = adjacency_matrix.multiply(X)
+    outgoing_transporters_distribution = adjacency_matrix.multiply(X.T)
     
     #assert abs(np.linalg.norm(transporters_distribution.sum(1), np.inf) - 1) < 0.001
     
@@ -120,12 +120,12 @@ def transport_against_gradient(T, values, adjacency_matrix, response="linear", p
         values_n = values ** params["n"]
         values_response = values_n / (params["threshold"] ** params["n"] + values_n)
 
-    incoming_transport_fluxes = incoming_transporters_distribution * values_response
-    outgoing_transport_fluxes = outgoing_transporters_distribution * np.reshape(values_response, (-1, 1))
+    incoming_transport_fluxes = incoming_transporters_distribution.multiply(values_response)
+    outgoing_transport_fluxes = outgoing_transporters_distribution.multiply(np.reshape(values_response, (-1, 1)))
     
     outgoing = outgoing_transport_fluxes.sum(1)
     incoming = incoming_transport_fluxes.sum(1)
-    return T * (incoming - outgoing)
+    return T * (incoming - outgoing).flatten()
 
 def parse_for_dependencies(functions, keys):
     """

@@ -15,11 +15,16 @@ def generate_cell_grid(x, y=0, z=0, noise_amplitude=1e-3):
     Parameters
     ----------
         x : int
-            Number of cells along the x axis
+            Number of cells along the x axis.
         y : int
-            Number of cells along the y axis, not used if 0 (default: 0)
+            Number of cells along the y axis, not used if 0. (default: 0)
         z : int
-            Number of cells along the z axis, not used if 0 (default: 0)
+            Number of cells along the z axis, not used if 0. (default: 0)
+        noise_amplitude : double
+            Amplitude of the random noise applied to the position of vertices.
+            The perturbations applied to each vertex are independent and
+            follow a uniform distribution between -noise_amplitude/2. and
+            noise_amplitude/2. (default: 0)
     
     Returns
     -------
@@ -34,7 +39,7 @@ def generate_cell_grid(x, y=0, z=0, noise_amplitude=1e-3):
     mesh = tissuedb.get_topology("mesh_id")
     pos = tovec(tissuedb.get_property("position") )
     bary = reduce(lambda x,y: x + y,pos.itervalues() ) / len(pos)
-    pos = dict((pid,vec - bary + np.random.uniform(-noise_amplitude, noise_amplitude, len(shape))) for pid,vec in pos.iteritems())
+    pos = dict((pid,vec - bary + np.random.uniform(-noise_amplitude/2., noise_amplitude/2., len(shape))) for pid,vec in pos.iteritems())
     return mesh, pos
     
 def generate_cell_grid_sim(x, y=0, z=0, noise_amplitude = 1e-3, sim_class=simulation.Simulation):

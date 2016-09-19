@@ -122,4 +122,5 @@ class MatplotlibRenderer():
             for s in self.sim.names_species:
                 concs = self.sim.y.get_species(s) / self.sim.dilution_volumes.as_1d_array()
                 print_flush("%s: from %s to %s" % (s, min(concs), max(concs)))
-        print_flush("Max value displayed for %s: %s" % (name, max_cmap))
+        if max_percentile <> None:
+            print_flush("Max value displayed for %s: %s" % (name, max_cmap))
