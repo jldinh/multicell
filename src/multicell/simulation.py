@@ -181,8 +181,10 @@ class Simulation(object):
         self.dilution_volume_function_parameters = {}
         self.contraction = 0.
         self.t = [0., 1.]
+        self.current_t = 0.
         self.save_pictures = False
         self.detection_mode = False
+        self.y = None
         
     def set_verbose(self, verbose):
         """
@@ -300,7 +302,9 @@ class Simulation(object):
                     self.register_computed_variable("q_" + name, self.make_dual_function(name, "*"))
             else:
                 if create_dual:
-                    self.register_computed_variable("c_" + name, self.make_dual_function(name, "/"))
+                    c_name = "c_" + name
+                    self.register_computed_variable(c_name, self.make_dual_function(name, "/"))
+                    self.intensive_cell_variables.add(c_name)
             self.set_ODE(name, null_function)
             self.n_species += 1
     
@@ -550,7 +554,7 @@ class Simulation(object):
         0.
         """
         
-        if not hasattr(self, "y") or len(self.y) < 1 or self.y.current().shape <> (self.n_species, self.n_cells):
+        if not hasattr(self, "y") or self.y is None or len(self.y) < 1 or self.y.current().shape <> (self.n_species, self.n_cells):
             self.y = series_concentration_table.Series_Concentration_Table()
             self.y.append_new_table(self.names_species, self.cids)
     
@@ -599,19 +603,24 @@ class Simulation(object):
         
         self.dependencies = dependencies
     
-    def compute_environment(self, y, t):
+    def compute_environment(self, y=None, t=None):
+        if y is None:
+            y = self.y.current().as_1d_array()
+        if t is None:
+            t = self.current_t
         ct = concentration_table.Concentration_Table(self.names_species, self.cids).import_values(y)
         ct = ct * (ct>0)
-        variables = dict((name, ct.get_species(name)) for name in self.names_species)
-            
-        environment = variables
+        
+        environment = dict((name, ct.get_species(name)) for name in self.names_species)
         environment["t"] = t
         environment["simulation"] = self
         environment.update(self.parameters)
         for name, function in self.intermediary_variables.items():
             environment[name] = function(**restrict_environment(environment, function))
+#            environment[name].variables_list = [name]
+#            environment[name]._rebuild_cached_info()
         environment.update(self.adjacency_matrices)
-        self.derivative_environment = environment
+        return environment
         
     def detect_adjacency_matrices(self):
         self.detection_mode = True
@@ -632,10 +641,10 @@ class Simulation(object):
             # Initialization of the derivative vector
             dydt = concentration_table.Concentration_Table(self.names_species, self.cids)
             
-            self.compute_environment(y, t)
+            environment = self.compute_environment(y, t)
             for name in self.names_species:
                 function = self.ODEs[name]
-                dydt.set_species(name, function(**restrict_environment(self.derivative_environment, function)))
+                dydt.set_species(name, function(**restrict_environment(environment, function)))
                 
             result = dydt.as_1d_array()
 
@@ -667,29 +676,31 @@ class Simulation(object):
         
         t = np.linspace(self.t[0], self.t[1], num=self.n_steps_growth+1)
         for i in xrange(self.n_steps_growth):
-            self.prepare_derivative()
             if self.growth:
                 print_flush("Growth step #%s" % i)
-                
-            ts_integration = time.time()
-            lrw = 100000000
-            (output, self.odeints_debug) = odeints(self.derivative, self.y.current().as_1d_array(), t[i:i+2], mxstep=10000, lrw=lrw, JPat=self.JPat, full_output=1)
-            #output = odeints(self.derivative, self.y.current().as_1d_array(), t[i:i+2], nnz=self.JPat.getnnz(), lrw=1000000, JPat=self.JPat)
+                        
             
-            lrw_needed = self.odeints_debug["leniw"] + self.odeints_debug["lenrw"]
-            while lrw_needed > lrw:
-                print_flush("Work array of insufficient length for successful integration. Increasing array length to %s." % lrw)
-                lrw = lrw_needed
-                (output, self.odeints_debug) = odeints(self.derivative, self.y.current().as_1d_array(), t[i:i+2], lrw=lrw, JPat=self.JPat, full_output=1)
-                lrw_needed = self.odeints_debug["leniw"] + self.odeints_debug["lenrw"]
+            if self.y is not None and len(self.names_species) > 0:
+                self.prepare_derivative()    
+                ts_integration = time.time()
+                lrw = int(1e8)
+                (output, self.odeints_debug) = odeints(self.derivative, self.y.current().as_1d_array(), t[i:i+2], mxstep=int(1e6), lrw=lrw, JPat=self.JPat, full_output=1)
                 
-            result = output[-1]
-            self.y.append_table(concentration_table.Concentration_Table(self.names_species, self.cids).import_values(result))
-            print_flush("Integration of the ODE system: %s seconds" % (time.time() - ts_integration))
+                lrw_needed = self.odeints_debug["leniw"] + self.odeints_debug["lenrw"]
+                while lrw_needed > lrw:
+                    print_flush("Work array of insufficient length for successful integration. Increasing array length to %s." % lrw)
+                    lrw = lrw_needed
+                    (output, self.odeints_debug) = odeints(self.derivative, self.y.current().as_1d_array(), t[i:i+2], lrw=lrw, JPat=self.JPat, full_output=1)
+                    lrw_needed = self.odeints_debug["leniw"] + self.odeints_debug["lenrw"]
+                    
+                result = output[-1]
+                self.y.append_table(concentration_table.Concentration_Table(self.names_species, self.cids).import_values(result))
+                print_flush("Integration of the ODE system: %s seconds" % (time.time() - ts_integration))
 
             if self.growth:
                 ts_growth = time.time()
                 self.set_pos(self.growth_method(self.mesh, self.get_pos(), **self.growth_method_parameters))
+                self.compute_dilution_volumes()
                 print_flush("Growth of the tissue: %s seconds" % (time.time() - ts_growth))
                 
             if self.division:
@@ -701,6 +712,8 @@ class Simulation(object):
 #            if self.growth or self.division:
 #                self.compute_Jacobian()
 #                self.compute_dilution_volumes()
+            
+            self.current_t = t[i+1]
             
             if self.render:
                 self.renderer.display(self.rendered_species, save=self.save_pictures)
@@ -805,7 +818,6 @@ class Simulation(object):
         
         self.dilution_volume_function = dilution_volume_function
         self.dilution_volume_function_parameters = dilution_volume_function_parameters
-#        self.dilution_volumes = self.compute_dilution_volumes()
     
     #Adapted from http://openalea.gforge.inria.fr/doc/vplants/tissue/doc/_build/html/user/cell_division/simple3D/index.html
     def is_internal_point(self, pid):
@@ -930,28 +942,30 @@ class Simulation(object):
         conserved_cids = np.array([cid for cid in current_cids if cid not in removed_cids])
         updated_cids = np.hstack((current_cids[np.in1d(current_cids, removed_cids, invert=True)], added_cids))
         self.set_cids(updated_cids)
-        variables_list = self.names_species
         
-        volumes = self.compute_dilution_volumes()
-        new_cells_volumes = volumes.restrict(added_cids).as_1d_array()
-        grouped_volumes = np.repeat(np.sum(new_cells_volumes.reshape((2, -1), order='F'), axis=0), 2)
-        
-        extensive_coeffs = new_cells_volumes / grouped_volumes
-        intensive_coeffs = np.ones(extensive_coeffs.shape)
-        coeffs = np.vstack([intensive_coeffs if x in self.intensive_cell_variables else extensive_coeffs for x in self.names_species])
-        new_cells_properties = np.repeat(self.y.current().restrict(removed_cids), 2, axis=1) * coeffs
-        
-        updated_values = np.hstack((self.y.current().restrict(conserved_cids), new_cells_properties))
-        self.y.append_new_table(variables_list, updated_cids)
-        self.y.current().import_values(updated_values)
+        if self.y is not None and len(self.names_species) > 0:
+            variables_list = self.names_species
+            
+            volumes = self.compute_dilution_volumes()
+            new_cells_volumes = volumes.restrict(added_cids).as_1d_array()
+            grouped_volumes = np.repeat(np.sum(new_cells_volumes.reshape((2, -1), order='F'), axis=0), 2)
+            
+            extensive_coeffs = new_cells_volumes / grouped_volumes
+            intensive_coeffs = np.ones(extensive_coeffs.shape)
+            coeffs = np.vstack([intensive_coeffs if x in self.intensive_cell_variables else extensive_coeffs for x in self.names_species])
+            new_cells_properties = np.repeat(self.y.current().restrict(removed_cids), 2, axis=1) * coeffs
+            
+            updated_values = np.hstack((self.y.current().restrict(conserved_cids), new_cells_properties))
+            self.y.append_new_table(variables_list, updated_cids)
+            self.y.current().import_values(updated_values)
     
     def set_cids(self, cids):
         self.cids = np.array(cids)
         self.n_cells = len(cids)
         self.dict_cids = dict((cid, i) for (i, cid) in enumerate(cids))
     
-    def register_renderer(self, renderer_class, rendered_species=None):
-        self.renderer = renderer_class(self)
+    def register_renderer(self, renderer_class, rendered_species=None, renderer_parameters={}):
+        self.renderer = renderer_class(self, **renderer_parameters)
         self.render = True
         self.rendered_species = rendered_species
     

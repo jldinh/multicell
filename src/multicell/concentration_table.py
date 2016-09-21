@@ -48,19 +48,22 @@ class Concentration_Table(np.ndarray):
         super(Concentration_Table, self).__setstate__(state[0:-5])
         
     def _rebuild_cached_info(self):
-        self.variables_dict = dict((name, i) for (i, name) in enumerate(self.variables_list))
+        self._rebuild_variables_info()
         self.dict_cids = dict((cid, i) for (i, cid) in enumerate(self.cids_array))
         self.n_cells = len(self.cids_array)
         
+    def _rebuild_variables_info(self):
+        self.variables_dict = dict((name, i) for (i, name) in enumerate(self.variables_list))
+        
     def get_species(self, name, cid=None):
         if cid == None:
-            res = self[self.variables_dict[name], :]
+            i = self.variables_dict[name]
+            res = self[i:i+1, :]
             res.variables_list = [name]
-            res.variables_dict = {name: 0}
-            res._rebuild_cached_info()
+            res._rebuild_variables_info()
             return res
         else:
-            return self.get_species(name)[self.dict_cids[cid]]
+            return self.get_species(name)[0, self.dict_cids[cid]]
     
     def set_species(self, name, values):
         self[self.variables_dict[name], :] = values

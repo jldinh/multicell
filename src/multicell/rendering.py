@@ -18,7 +18,7 @@ import os
 class MatplotlibRenderer():
     """A class handling the rendering of a Simulation object in PlantGL"""
     
-    def __init__(self, sim):
+    def __init__(self, sim, max_cmap=None, view_size=None):
         """
         Creates a PlantGLRenderer using a Simulation object
         
@@ -29,6 +29,8 @@ class MatplotlibRenderer():
         """
         
         self.sim = sim
+        self.max_cmap = max_cmap
+        self.view_size = view_size
 
     def _render(self, name=None, save=False, max_percentile=None):
         """
@@ -52,9 +54,13 @@ class MatplotlibRenderer():
             array = np.zeros(self.sim.n_cells)
             max_cmap = 1
         else:
-            face_values = [self.sim.y.get_species(name, self.sim.mesh.regions(2, fid).next()) for fid in outer_fids]
-            array = self.sim.y.get_species(name) / self.sim.dilution_volumes.as_1d_array()
-            if max_percentile is None:
+            environment = self.sim.compute_environment()
+            associated_cids = [self.sim.mesh.regions(2, fid).next() for fid in outer_fids]
+            array = environment[name]
+            face_values = [array.get_species(array.variables_list[0], cid) for cid in associated_cids]
+            if self.max_cmap is not None:
+                max_cmap = self.max_cmap
+            elif max_percentile is None:
                 max_cmap = np.max(array)
             else:
                 max_cmap = np.percentile(array, max_percentile)
@@ -78,7 +84,10 @@ class MatplotlibRenderer():
         
         min_coords = np.min(self.sim.pos.values(), axis=0)
         max_coords = np.max(self.sim.pos.values(), axis=0)
-        max_half_amplitude = max(max_coords - min_coords) / 2
+        if self.view_size is not None:
+            max_half_amplitude = self.view_size / 2
+        else:
+            max_half_amplitude = max(max_coords - min_coords) / 2
         center = (max_coords + min_coords) / 2
         boundaries = np.tile(center[:, np.newaxis], (1, 2))
         boundaries[:, 0] -= max_half_amplitude
@@ -119,8 +128,9 @@ class MatplotlibRenderer():
         
         max_cmap = self._render(name, save=save, max_percentile=max_percentile)
         if name <> None:
-            for s in self.sim.names_species:
-                concs = self.sim.y.get_species(s) / self.sim.dilution_volumes.as_1d_array()
+            environment = self.sim.compute_environment()
+            for s in self.sim.intensive_cell_variables:
+                concs = environment[s][0]
                 print_flush("%s: from %s to %s" % (s, min(concs), max(concs)))
         if max_percentile <> None:
             print_flush("Max value displayed for %s: %s" % (name, max_cmap))
