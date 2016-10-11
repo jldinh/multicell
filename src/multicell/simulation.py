@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+
+import pkg_resources
+pkg_resources.require("scipy>=0.18.0")
+
 import numpy as np
 from odesparse import odeints
 import scipy as sp

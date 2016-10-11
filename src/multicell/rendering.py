@@ -18,7 +18,7 @@ import os
 class MatplotlibRenderer():
     """A class handling the rendering of a Simulation object in PlantGL"""
     
-    def __init__(self, sim, max_cmap=None, view_size=None):
+    def __init__(self, sim, max_cmap=None, view_size=None, view=(None, None)):
         """
         Creates a PlantGLRenderer using a Simulation object
         
@@ -31,6 +31,7 @@ class MatplotlibRenderer():
         self.sim = sim
         self.max_cmap = max_cmap
         self.view_size = view_size
+        self.view = view
 
     def _render(self, name=None, save=False, max_percentile=None):
         """
@@ -78,6 +79,7 @@ class MatplotlibRenderer():
         fig = plt.figure()
         ax = fig.gca(projection='3d')
         ax.set_aspect('equal')
+        ax.view_init(*self.view)
         
         poly = Poly3DCollection(polys, facecolors=facecolors, linewidth=0.2)
         ax.add_collection3d(poly)
