@@ -177,8 +177,7 @@ class Simulation(object):
         self.growth = False
         self.division = False
         self.render = False
-        self.n_time_steps = 2
-        self.n_steps_growth = 1
+        self.n_time_steps = 1
         self.volume_threshold_division = 1.5
         self.verbose = True
         self.dilution_volume_function = cell_volume
@@ -189,6 +188,9 @@ class Simulation(object):
         self.save_pictures = False
         self.detection_mode = False
         self.y = None
+        
+    def set_n_time_steps(self, n_time_steps):
+        self.n_time_steps = n_time_steps
         
     def set_verbose(self, verbose):
         """
@@ -678,8 +680,8 @@ class Simulation(object):
 #        self.compute_Jacobian()
 #        print_flush("Initial computation of the Jacobian: %s seconds" % (time.time() - ts_initial_Jacobian))
         
-        t = np.linspace(self.t[0], self.t[1], num=self.n_steps_growth+1)
-        for i in xrange(self.n_steps_growth):
+        t = np.linspace(self.t[0], self.t[1], num=self.n_time_steps+1)
+        for i in xrange(self.n_time_steps):
             if self.growth:
                 print_flush("Growth step #%s" % i)
                         
@@ -728,7 +730,7 @@ class Simulation(object):
         """
         
         self.growth = True
-        self.n_steps_growth = n_steps
+        self.n_time_steps = n_steps
     
     def enable_division(self, contraction=0.):
         """

@@ -18,7 +18,7 @@ import os
 class MatplotlibRenderer():
     """A class handling the rendering of a Simulation object in PlantGL"""
     
-    def __init__(self, sim, max_cmap=None, view_size=None, view=(None, None)):
+    def __init__(self, sim, max_cmap=None, view_size=None, view=(None, None), axes=True):
         """
         Creates a PlantGLRenderer using a Simulation object
         
@@ -32,13 +32,14 @@ class MatplotlibRenderer():
         self.max_cmap = max_cmap
         self.view_size = view_size
         self.view = view
+        self.axes = axes
 
     def _render(self, name=None, save=False, max_percentile=None):
         """
         Low level method to render a tissue, colored by concentrations.
         
         Concentrations are taken from the table of concentrations of the 
-        Simulation. Uses JetMap as ColorMap.
+        Simulation. Uses Jet as ColorMap.
         
         Parameters
         ----------
@@ -51,7 +52,7 @@ class MatplotlibRenderer():
         
         outer_fids = [fid for fid in self.sim.mesh.wisps(2) if self.sim.mesh.nb_regions(2, fid) == 1]
         if name == None:
-            face_values = [0. for fid in outer_fids]
+            face_values = [0.5 for fid in outer_fids]
             array = np.zeros(self.sim.n_cells)
             max_cmap = 1
         else:
@@ -80,6 +81,8 @@ class MatplotlibRenderer():
         ax = fig.gca(projection='3d')
         ax.set_aspect('equal')
         ax.view_init(*self.view)
+        if not self.axes:
+            ax.set_axis_off()
         
         poly = Poly3DCollection(polys, facecolors=facecolors, linewidth=0.2)
         ax.add_collection3d(poly)
@@ -129,6 +132,7 @@ class MatplotlibRenderer():
         """
         
         max_cmap = self._render(name, save=save, max_percentile=max_percentile)
+        print_flush("Time: %s" % self.sim.current_t)       
         if name <> None:
             environment = self.sim.compute_environment()
             for s in self.sim.intensive_cell_variables:
