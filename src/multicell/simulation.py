@@ -183,14 +183,17 @@ class Simulation(object):
         self.dilution_volume_function = cell_volume
         self.dilution_volume_function_parameters = {}
         self.contraction = 0.
-        self.t = [0., 1.]
+        self.duration = 1.
+        self.t_scale = "linear"
         self.current_t = 0.
+        self.t = [0., 1.]
         self.save_pictures = False
         self.detection_mode = False
         self.y = None
         
-    def set_n_time_steps(self, n_time_steps):
+    def set_time_steps(self, n_time_steps, t_scale="linear"):
         self.n_time_steps = n_time_steps
+        self.t_scale = t_scale
         
     def set_verbose(self, verbose):
         """
@@ -521,17 +524,17 @@ class Simulation(object):
         self.initialize_mesh_properties()
         print_flush("Topomesh importation: finished (%.2f s)" % (time.time() - time_start))
     
-    def set_duration(self, t_max):
+    def set_duration(self, duration):
         """
         Sets the duration that the simulation should run for.
         
         Parameters
         ----------
-            t_max : float
+            duration : float
                 Duration of the simulation.
         """
         
-        self.t = [0., float(t_max)]
+        self.duration = float(duration)
     
     def set_cell_variable(self, name, values, time_index=None):
         self.y.set_species(name, values, time_index)
@@ -679,8 +682,18 @@ class Simulation(object):
 #        ts_initial_Jacobian = time.time()
 #        self.compute_Jacobian()
 #        print_flush("Initial computation of the Jacobian: %s seconds" % (time.time() - ts_initial_Jacobian))
+        self.t[0] = self.current_t
+        self.t[1] = self.t[0] + self.duration
         
-        t = np.linspace(self.t[0], self.t[1], num=self.n_time_steps+1)
+        if self.t_scale == "linear":
+            t = np.linspace(self.t[0], self.t[1], num=self.n_time_steps+1)
+        elif self.t_scale == "log2":
+            space = np.logspace(0, self.n_time_steps, num=self.n_time_steps+1, base=2)
+            space[0] = 0
+            t = self.t[0] + (self.t[1] - self.t[0]) * space / (2 ** self.n_time_steps)
+#        elif self.t_scale == "log10":
+#            t = np.logspace(self.t[0], self.t[1], num=self.n_time_steps+1, base=10)
+            
         for i in xrange(self.n_time_steps):
             if self.growth:
                 print_flush("Growth step #%s" % i)
@@ -724,13 +737,14 @@ class Simulation(object):
             if self.render:
                 self.renderer.display(self.rendered_species, save=self.save_pictures)
     
-    def enable_growth(self, n_steps):
+    def enable_growth(self, n_steps=None):
         """
         Enables growth.
         """
         
         self.growth = True
-        self.n_time_steps = n_steps
+        if n_steps is not None:
+            self.n_time_steps = n_steps
     
     def enable_division(self, contraction=0.):
         """
