@@ -70,6 +70,7 @@ class MatplotlibRenderer():
                 max_cmap = 1
                 
         sm = matplotlib.cm.ScalarMappable(matplotlib.colors.Normalize(vmin=0, vmax=max_cmap, clip=True), "jet")
+        sm.set_array(face_values)
         facecolors = [sm.to_rgba(x) for x in face_values]
         
         
@@ -105,6 +106,11 @@ class MatplotlibRenderer():
         ax.set_zlabel('Z')
         ax.set_zlim3d(boundaries[2][0], boundaries[2][1])
         
+        if name is not None:
+            fig.colorbar(sm, shrink=0.5, aspect=10)
+        
+#        plt.subplots_adjust(left=0., right=1., top=1., bottom=0.)
+        plt.tight_layout()
         plt.show()
 
         if save:
@@ -132,7 +138,7 @@ class MatplotlibRenderer():
         """
         
         max_cmap = self._render(name, save=save, max_percentile=max_percentile)
-        print_flush("Time: %s" % self.sim.current_t)       
+        print_flush("Time point: %s" % self.sim.current_t)       
         if name <> None:
             environment = self.sim.compute_environment()
             for s in self.sim.intensive_cell_variables:

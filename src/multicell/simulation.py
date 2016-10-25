@@ -75,8 +75,12 @@ def diffusion(D, values, adjacency_matrix):
         1D vector of chemical species flows, of the same length as values.
     """
     
-    differences = compute_differences(values)
-    return -D * (adjacency_matrix.multiply(differences)).sum(1).getA().flatten()
+#    differences = compute_differences(values)
+#    return -D * (adjacency_matrix.multiply(differences)).sum(1).getA().flatten()
+#    adjacency_matrix = adjacency_matrix.todense()
+    values = values.flatten()
+    diag_values = sp.sparse.diags(values, format="csr")
+    return -D * (diag_values * adjacency_matrix - adjacency_matrix * diag_values).sum(1).getA().flatten()
 
 def transport_against_gradient(T, values, adjacency_matrix, response="linear", params={}):
     """
@@ -106,30 +110,31 @@ def transport_against_gradient(T, values, adjacency_matrix, response="linear", p
         1D vector of chemical species flows, of the same length as values.
     """
     
-    # 1 value per column => horizontal broadcast into column pattern
-    # Should be precomputed for incomplete grids
-    sum_concentrations_neighbors = adjacency_matrix.multiply(values).sum(1).getA().flatten()
-    sum_concentrations_neighbors += 1 * (sum_concentrations_neighbors == 0)
-    
-    X = np.reshape(values, (-1, 1)) / sum_concentrations_neighbors
-    
-    incoming_transporters_distribution = adjacency_matrix.multiply(X)
-    outgoing_transporters_distribution = adjacency_matrix.multiply(X.T)
-    
-    #assert abs(np.linalg.norm(transporters_distribution.sum(1), np.inf) - 1) < 0.001
-    
+#    adjacency_matrix = adjacency_matrix.todense()
+    values = values.flatten()
+    values_vector = np.asmatrix(values).T
+    sum_surfaces_concentrations_neighbors = (adjacency_matrix * values_vector).getA().flatten()
+#    sum_surfaces_concentrations_neighbors += 1e9 * (sum_surfaces_concentrations_neighbors < 1e-6)
+    sum_surfaces_concentrations_neighbors = np.where(sum_surfaces_concentrations_neighbors <= 0, np.full(sum_surfaces_concentrations_neighbors.shape, np.inf), sum_surfaces_concentrations_neighbors)
+            
+#    values_response = values
     if response == "linear":
         values_response = values
     elif response == "hill":
         values_n = values ** params["n"]
         values_response = values_n / (params["threshold"] ** params["n"] + values_n)
 
-    incoming_transport_fluxes = incoming_transporters_distribution.multiply(values_response)
-    outgoing_transport_fluxes = outgoing_transporters_distribution.multiply(np.reshape(values_response, (-1, 1)))
-    
-    outgoing = outgoing_transport_fluxes.sum(1)
-    incoming = incoming_transport_fluxes.sum(1)
-    return T * (incoming - outgoing).flatten()
+    flows = (
+    sp.sparse.diags(values_response / sum_surfaces_concentrations_neighbors, format="csr")
+#    np.asmatrix(np.diag(values_response / sum_surfaces_concentrations_neighbors))
+    * adjacency_matrix 
+    * sp.sparse.diags(values, format="csr").todense()
+#    * np.asmatrix(np.diag(values))
+    )
+
+    outgoing = flows.sum(1).flatten()
+    incoming = flows.sum(0).flatten()
+    return T * (incoming - outgoing)
 
 def parse_for_dependencies(functions, keys):
     """
@@ -372,7 +377,7 @@ class Simulation(object):
                 for ocid in self.mesh.regions(2, wid):
                     if ocid <> cid and ocid in cids:
                         adjacency_matrix[self.dict_cids[cid], self.dict_cids[ocid]] += s
-        return adjacency_matrix
+        return adjacency_matrix.tocsr()
     
     def compute_adjacency_matrix(self):
         """
@@ -385,10 +390,10 @@ class Simulation(object):
             Sparse matrix of exchange surfaces
         """
         
-        print_flush("Adjacency matrix computation: started")
+#        print_flush("Adjacency matrix computation: started")
         time_start = time.time()
-        self.adjacency_matrices["adjacency_matrix"] = self.compute_generic_adjacency_matrix(self.cids).tocsr()
-        print_flush("Adjacency matrix computation: finished (%.2f s)" % (time.time() - time_start))
+        self.adjacency_matrices["adjacency_matrix"] = self.compute_generic_adjacency_matrix(self.cids)
+#        print_flush("Adjacency matrix computation: finished (%.2f s)" % (time.time() - time_start))
     
     def register_adjacency_matrix(self, name, cids_function):
         self.adjacency_matrices_specs[name] = cids_function
@@ -397,18 +402,18 @@ class Simulation(object):
         for name, cids_function in self.adjacency_matrices_specs.items():
             self.adjacency_matrices[name] = self.compute_generic_adjacency_matrix(cids_function)
     
-    def _transport(self, function, coeff, values, adjacency_matrix, *args, **kwargs):
+    def _transport(self, function, coeff, values, adjacency_matrix, degree=1, *args, **kwargs):
         if self.detection_mode:
             assert len(values.variables_list) == 1
             name = values.variables_list[0]
-            self.add_adjacency_matrix(name, adjacency_matrix)
+            self.add_adjacency_matrix(name, sum([adjacency_matrix ** d for d in xrange(1, degree+1)]))
         return function(coeff, values, adjacency_matrix, *args, **kwargs)
     
     def diffusion(self, D, values, adjacency_matrix):
         return self._transport(diffusion, D, values, adjacency_matrix)
     
     def transport_against_gradient(self, T, values, adjacency_matrix, *args, **kwargs):
-        return self._transport(transport_against_gradient, T, values, adjacency_matrix, *args, **kwargs)
+        return self._transport(transport_against_gradient, T, values, adjacency_matrix, 2, *args, **kwargs)
     
     def add_adjacency_matrix(self, name, adjacency_matrix):
         if name in self.variables_adjacency_matrices:
@@ -421,7 +426,7 @@ class Simulation(object):
         Compute the Jacobian matrix of the ODE system.
         """
         
-        print_flush("Jacobian computation: started")
+        #print_flush("Jacobian computation: started")
         if not hasattr(self, "dependencies"):
             self.compute_dependencies()
         time_start = time.time()
@@ -445,7 +450,7 @@ class Simulation(object):
                     
         self.JPat = JPat
         
-        print_flush("Jacobian computation: finished (%.2f s)" % (time.time() - time_start))
+        #print_flush("Jacobian computation: finished (%.2f s)" % (time.time() - time_start))
     
     def set_mesh(self, mesh):
         """
@@ -515,14 +520,14 @@ class Simulation(object):
         """
         
         time_start = time.time()
-        print_flush("Topomesh importation: started")
-        print_flush("- setting mesh")
+#        print_flush("Topomesh importation: started")
+#        print_flush("- setting mesh")
         self.set_mesh(mesh)
-        print_flush("- setting pos")
+#        print_flush("- setting pos")
         self.set_pos(pos)
-        print_flush("- updating properties")
+#        print_flush("- updating properties")
         self.initialize_mesh_properties()
-        print_flush("Topomesh importation: finished (%.2f s)" % (time.time() - time_start))
+#        print_flush("Topomesh importation: finished (%.2f s)" % (time.time() - time_start))
     
     def set_duration(self, duration):
         """
@@ -713,8 +718,9 @@ class Simulation(object):
                     lrw_needed = self.odeints_debug["leniw"] + self.odeints_debug["lenrw"]
                     
                 result = output[-1]
+                result *= (result >= 0)
                 self.y.append_table(concentration_table.Concentration_Table(self.names_species, self.cids).import_values(result))
-                print_flush("Integration of the ODE system: %s seconds" % (time.time() - ts_integration))
+                #print_flush("Integration of the ODE system: %s seconds" % (time.time() - ts_integration))
 
             if self.growth:
                 ts_growth = time.time()
