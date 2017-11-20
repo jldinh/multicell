@@ -35,7 +35,7 @@ Install Python modules with ``pip``. ::
     
     pip install ipython numpy scipy matplotlib jupyter pandas soappy scikit-image scikit-learn sphinx --user
     
-Install ``deploy`` and ``sconsx``.
+Install ``deploy`` and ``sconsx``. ::
     
     git clone https://github.com/openalea/deploy.git
     cd deploy
