@@ -33,7 +33,7 @@ Update pip (a Python module manager). ::
     
 Install Python modules with ``pip``. ::
     
-    pip install ipython numpy scipy matplotlib jupyter pandas soappy scikit-image scikit-learn sphinx --user
+    pip install ipython==5.5 numpy scipy matplotlib jupyter pandas soappy scikit-image scikit-learn sphinx --user
     
 Install ``deploy`` and ``sconsx``. ::
     
