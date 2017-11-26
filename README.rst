@@ -74,7 +74,7 @@ Download ``vplants``. ::
     tar xzvf vplants-1.2.0.tar.gz
     cd vplants
     
-Edit ``multisetup.py`` (e.g. ``gedit multisetup.py``): comment ‘container’ (add a leading #), uncomment ‘tissue’ (remove the leading #), save and close. Install vplants. ::
+Edit ``multisetup.py`` (e.g. ``gedit multisetup.py``): in the `dirs` section, comment every line (add a leading #), except ‘tissue’ (remove the leading #), save and close. Install vplants. ::
 
     python multisetup.py develop --user
     cd ..
